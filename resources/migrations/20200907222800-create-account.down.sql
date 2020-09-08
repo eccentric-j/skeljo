@@ -1,0 +1,3 @@
+DROP account;
+--;;
+DROP profile;

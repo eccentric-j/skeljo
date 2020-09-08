@@ -8,7 +8,8 @@
    [next.jdbc.prepare :as p]
    [clojure.string :as str]
    [honeysql.core :as sql]
-   [honeysql-postgres.format]))
+   [honeysql-postgres.format]
+   [buddy.hashers :as hs]))
 
 (defn datasource-options []
   (merge {:auto-commit        true
@@ -47,7 +48,8 @@
    query-opts))
 
 (defn execute-one! [conn sql-map]
-  (jdbc/execute-on!
+  (jdbc/execute-one!
    conn
    (sql/format sql-map :quoting :ansi)
    query-opts))
+

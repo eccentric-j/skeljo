@@ -1,14 +1,111 @@
+# -*- org-babel-clojure-backend: cider; -*-
+
 #+TITLE: DB Setup
-#+PROPERTY: header-args:sql :engine postgres :db postgres :dbuser postgres :dbhost localhost
-#+PROPERTY: header-args:sql+ :dir /docker:postgres@skeljo_db_1:/
-# #+PROPERTY: header-args:sql+ :cmdline "-p 6432"
+#+PROPERTY: header-args:sql :engine postgres :db postgres :dbuser postgres :dbhost localhost :noexport
+#+PROPERTY: header-args:sql+ :cmdline "-p 6432"
+#+PROPERTY: header-args:clj :session *skeljo-clj*
+# #+PROPERTY: header-args:sql+ :dir /docker:postgres@skeljo_db_1:/
 
 * Test Connection
 #+BEGIN_SRC sql
-SELECT 2 + 2 AS adder;
+\dt
 #+END_SRC
 
 #+RESULTS:
-| adder |
-|-------|
-|     4 |
+| No relations found. |
+|---------------------|
+
+* Create Table Test
+#+BEGIN_SRC sql
+CREATE TABLE account (
+  id SERIAL PRIMARY KEY,
+  email text NOT NULL UNIQUE,
+  password text NOT NULL,
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+#+END_SRC
+* Drop Table Test
+#+BEGIN_SRC sql
+DROP TABLE account;
+#+END_SRC
+
+#+RESULTS:
+| DROP TABLE |
+|------------|
+* Working with the db in Clojure
+** HoneSQL Formatting
+#+BEGIN_SRC clojure :results pp
+(require '[honeysql.core :as sql])
+(sql/format {:select [:*]
+               :from [:account]})
+#+END_SRC
+
+#+RESULTS:
+: ["SELECT * FROM account"]
+:
+** Direct SQL Query to insert
+- For simpler table creats can use create-table-ddl http://clojure-doc.org/articles/ecosystem/java_jdbc/home.html
+- Can only run this once
+#+BEGIN_SRC clojure :results pp
+(in-ns 'app.model.database)
+(jdbc/execute!
+   pool
+   ["CREATE TABLE account (
+  id SERIAL PRIMARY KEY,
+  email text NOT NULL UNIQUE,
+  password text NOT NULL,
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  updated_at timestamp with time zone DEFAULT now() NOT NULL
+);"]
+   query-opts)
+#+END_SRC
+
+#+RESULTS:
+: class org.postgresql.util.PSQLException
+** Honey SQL to Insert
+#+BEGIN_SRC clojure
+(in-ns 'app.model.database)
+(execute-one!
+   pool
+   {:insert-into :account
+    :values [{:email    "jayzawrotny@gmail.com"
+              :password (hs/derive "password")}]
+    :returning [:id]})
+#+END_SRC
+
+#+RESULTS:
+: #:account{:id 1}
+** Honey SQL to Fetch
+#+BEGIN_SRC clojure :results pp
+(in-ns 'app.model.database)
+(execute-one!
+ pool
+ {:select [:*]
+  :from [:account]})
+#+END_SRC
+
+#+RESULTS:
+: #:account{:id 1,
+:           :email "jayzawrotny@gmail.com",
+:           :password
+:           "bcrypt+sha512$fb657f3492de62da4603c056726e2a51$12$f4f0afb481b32452ae012be847d310da7eda5d9db6ae4df6",
+:           :created_at #inst "2020-09-08T02:04:26.426935000-00:00",
+:           :updated_at #inst "2020-09-08T02:04:26.426935000-00:00"}
+:
+
+** Direct SQL to query
+- Probably shouldn't be used much. Prefer honeysqlG
+#+BEGIN_SRC clojure :results pp
+(in-ns 'app.model.database)
+(def row (first
+            (jdbc/execute!
+             pool
+             ["SELECT * FROM account;"]
+             query-opts)))
+(get-in row [:account/email])
+#+END_SRC
+
+#+RESULTS:
+: "jayzawrotny@gmail.com"
+:
