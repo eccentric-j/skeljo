@@ -1,0 +1,14 @@
+#+TITLE: DB Setup
+#+PROPERTY: header-args:sql :engine postgres :db postgres :dbuser postgres :dbhost localhost
+#+PROPERTY: header-args:sql+ :dir /docker:postgres@skeljo_db_1:/
+# #+PROPERTY: header-args:sql+ :cmdline "-p 6432"
+
+* Test Connection
+#+BEGIN_SRC sql
+SELECT 2 + 2 AS adder;
+#+END_SRC
+
+#+RESULTS:
+| adder |
+|-------|
+|     4 |
