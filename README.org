@@ -1,0 +1,5 @@
+#+TITLE: Skeleton Journal
+
+* Skeleton Journal
+A digital journaling platform to help people improve in their own goals.
+[[./doc/eccentric-j-sept-bujo.jpg]]
